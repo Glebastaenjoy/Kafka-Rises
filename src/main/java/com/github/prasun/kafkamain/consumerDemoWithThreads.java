@@ -13,28 +13,64 @@ import java.util.concurrent.CountDownLatch;
 
 public class consumerDemoWithThreads {
     public static void main(String[] args) {
+        new consumerDemoWithThreads().run();
+    }
+
+    private consumerDemoWithThreads() {
+    }
+
+    private void run() {
         Logger logger = LoggerFactory.getLogger(consumerDemoWithThreads.class);
         String bootstrapServer = "127.0.0.1:9092";
-        String groupId = "my_firstconsumer_group";
+        String groupId = "consumer_thread_group";
         String topic = "myfirst_topic";
+        //latch for dealing with multiple threads
         CountDownLatch latch = new CountDownLatch(1);
-        Runnable myConsumerThread = new ConsumerThreads(
+        logger.info("Creating the consumer thread");
+        //create the consumer runnable
+        Runnable cunsumerRunnable = new ConsumerRunnable(
                 bootstrapServer,
                 groupId,
                 topic,
                 latch
-                );
+        );
+        //start the thread
+        Thread consumerThread = new Thread(cunsumerRunnable);
+        consumerThread.start();
+
+        // add a shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Caught shutdown hook");
+            ((ConsumerRunnable) cunsumerRunnable).shutdown();
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            logger.info("Application has exited");
+        }
+
+        ));
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            logger.error("Application got interrupted", e);
+        } finally {
+            logger.info("Application is closing");
+        }
 
     }
-    public class ConsumerThreads implements Runnable {
+
+    public class ConsumerRunnable implements Runnable {
         private CountDownLatch latch;
         private KafkaConsumer<String, String> consumer;
-        private Logger logger = LoggerFactory.getLogger(ConsumerThreads.class);
+        private Logger logger = LoggerFactory.getLogger(ConsumerRunnable.class);
 
-        public ConsumerThreads(String bootstrapServer,
-                               String groupId,
-                               String topic,
-                               CountDownLatch latch) {
+        public ConsumerRunnable(String bootstrapServer,
+                                String groupId,
+                                String topic,
+                                CountDownLatch latch) {
             this.latch = latch;
             Properties properties = new Properties();
             properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
