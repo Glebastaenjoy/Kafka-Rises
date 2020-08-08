@@ -10,16 +10,20 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class TwitterProducer {
     private Logger logger = LoggerFactory.getLogger(TwitterProducer.class.getName());
+
     public TwitterProducer() {
 
     }
@@ -34,6 +38,13 @@ public class TwitterProducer {
         BlockingQueue<String> msgQueue = new LinkedBlockingQueue<>(10000);
         Client client = twitterClient(msgQueue);
         client.connect(); // Attempts to establish a connection.
+        KafkaProducer<String,String> producer=createKafkaProducer();
+        // Shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread( ()-> {
+            logger.info("Shutting down application.....");
+            client.stop();
+            producer.close();
+        }));
 
         while (!client.isDone()) {
             String msg = null;
@@ -45,10 +56,30 @@ public class TwitterProducer {
             }
             if(msg != null){
                 logger.info(msg);
+                producer.send(new ProducerRecord<>("tweets", null, msg), new Callback() {
+                    @Override
+                    public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+                        if(e != null){
+                            logger.error("Something went wrong",e);
+                        }
+                    }
+                });
             }
         }
         logger.info("End of application");
     }
+
+    private KafkaProducer<String, String> createKafkaProducer() {
+        String bootsrapServer = "127.0.0.1:9092";
+        Properties properties=new Properties();
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,bootsrapServer);
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
+
+        KafkaProducer<String,String> producer = new KafkaProducer<String, String>(properties);
+        return producer;
+    }
+
     public Client twitterClient(BlockingQueue<String> msgQueue ) {
 
 
@@ -57,7 +88,7 @@ public class TwitterProducer {
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
 
         // Optional: set up some followings and track terms
-        List<String> terms = Lists.newArrayList("Amul");
+        List<String> terms = Lists.newArrayList("pubg");
         hosebirdEndpoint.trackTerms(terms);
 
         Authentication hosebirdAuth = new OAuth1(consumerKey, consumerSecret, token, tokenSecret);
