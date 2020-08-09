@@ -23,7 +23,10 @@ import java.util.concurrent.TimeUnit;
 
 public class TwitterProducer {
     private Logger logger = LoggerFactory.getLogger(TwitterProducer.class.getName());
-
+    private String consumerKey = "QhvGR6D3ABunJv07RAuFDS2Ca";
+    private String consumerSecret = "8bNAXZc30t2NcepitwamZbMT3DU9mIaupW3Rt0JVuIizhGwGrO";
+    private String token = "2954257360-kmHzhLExVTHlGPYGrjIP0u28PTnGqmHMvJcCEGa";
+    private String tokenSecret = "VQE2LXiAPZCszHh5pNzOjjrY0NmsG4ltTa0ZJQag0WDy2";
     public TwitterProducer() {
 
     }
@@ -76,6 +79,11 @@ public class TwitterProducer {
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,StringSerializer.class.getName());
 
+        //Create Safe Producer
+        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,"true");
+        properties.setProperty(ProducerConfig.ACKS_CONFIG,"all");
+        properties.setProperty(ProducerConfig.RETRIES_CONFIG,Integer.toString(Integer.MAX_VALUE));
+        properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION,"5");
         KafkaProducer<String,String> producer = new KafkaProducer<String, String>(properties);
         return producer;
     }
