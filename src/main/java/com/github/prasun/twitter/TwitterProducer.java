@@ -23,10 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TwitterProducer {
     private Logger logger = LoggerFactory.getLogger(TwitterProducer.class.getName());
-    private String consumerKey = "QhvGR6D3ABunJv07RAuFDS2Ca";
-    private String consumerSecret = "8bNAXZc30t2NcepitwamZbMT3DU9mIaupW3Rt0JVuIizhGwGrO";
-    private String token = "2954257360-kmHzhLExVTHlGPYGrjIP0u28PTnGqmHMvJcCEGa";
-    private String tokenSecret = "VQE2LXiAPZCszHh5pNzOjjrY0NmsG4ltTa0ZJQag0WDy2";
+
     public TwitterProducer() {
 
     }
@@ -85,6 +82,11 @@ public class TwitterProducer {
         properties.setProperty(ProducerConfig.RETRIES_CONFIG,Integer.toString(Integer.MAX_VALUE));
         properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION,"5");
         KafkaProducer<String,String> producer = new KafkaProducer<String, String>(properties);
+
+        // High throughput producer
+        properties.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG,"snappy");
+        properties.setProperty(ProducerConfig.LINGER_MS_CONFIG,"20");
+        properties.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32*1024) );
         return producer;
     }
 
