@@ -19,9 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 
 public class TwitterConsumer {
 
@@ -34,6 +32,7 @@ public class TwitterConsumer {
         while(true){
             ConsumerRecords<String,String> records = consumer.poll(Duration.ofMillis(100));
             logger.info("Received:"+records.count()+ " records");
+            List<Document> dbObjectList = new ArrayList<>();
             for (ConsumerRecord<String,String> record: records){
                 logger.info("Key:"+record.key()+" Value:"+record.value());
                 logger.info("Partition:"+record.partition()+", Offset:"+record.offset());
@@ -45,13 +44,11 @@ public class TwitterConsumer {
                 tweet.append("data",Document.parse(record.value()));
                 tweet.append("name",tweetRecs.get("name"));
                 tweet.append("text",tweetRecs.get("text"));
-                try {
-                    tweetsCollection.insertOne(tweet);
-                }catch (MongoWriteException e){
-                    e.printStackTrace();
-                }
+                dbObjectList.add(tweet);
 
             }
+            if(dbObjectList.size()>0)
+                tweetsCollection.insertMany(dbObjectList);
             consumer.commitSync();
             logger.info("Offsets Commited");
         }
