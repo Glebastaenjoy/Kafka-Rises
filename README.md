@@ -1,4 +1,8 @@
-# Kafka Implementation using Java
+# Kafka Implementation using Python
+
+#### Start the server
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
 
 #### Topics Covered
 * Producer
