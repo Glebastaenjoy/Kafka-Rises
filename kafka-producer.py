@@ -1,7 +1,6 @@
 from kafka import KafkaProducer
 import json
 from data import get_registered_user
-import time
 
 
 def json_serializer(data):
@@ -19,9 +18,33 @@ producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
                          # partitioner=get_partition
                          )
 
+
+def kafka_python_producer_sync(producer, topic, size):
+    for n in range(size):
+        data = get_registered_user()
+        data['serial'] = n
+        future = producer.send('myfirst_topic', data)
+        result = future.get(timeout=60)
+        print(result)
+    producer.flush()
+
+
+def success(metadata):
+    print(metadata)
+
+
+def error(exception):
+    print(exception)
+
+
+def kafka_python_producer_async(producer, topic, size):
+    for n in range(size):
+        data = get_registered_user()
+        data['serial'] = n
+        producer.send(topic, data).add_callback(success).add_errback(error)
+    producer.flush()
+
+
 if __name__ == "__main__":
-    count = 30
-    while count > 0:
-        count -= 1
-        producer.send('myfirst_topic', get_registered_user())
-        time.sleep(1)
+    kafka_python_producer_async(producer, 'myfirst_topic', 10)
+    kafka_python_producer_sync(producer, 'myfirst_topic', 10)
