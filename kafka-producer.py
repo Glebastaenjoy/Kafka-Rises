@@ -13,12 +13,6 @@ def get_partition(key_bytes, all_partition, available_partition):
     return available_partition[0]
 
 
-producer = KafkaProducer(bootstrap_servers=['localhost:9092'],
-                         value_serializer=json_serializer,
-                         # partitioner=get_partition
-                         )
-
-
 def kafka_python_producer_sync(producer, topic, size):
     for n in range(size):
         data = get_registered_user()
@@ -46,5 +40,12 @@ def kafka_python_producer_async(producer, topic, size):
 
 
 if __name__ == "__main__":
-    kafka_python_producer_async(producer, 'myfirst_topic', 10)
-    kafka_python_producer_sync(producer, 'myfirst_topic', 10)
+    topic = 'myfirst_topic'
+    server_list = ['localhost:9092']
+    producer = KafkaProducer(bootstrap_servers=server_list,
+                             value_serializer=json_serializer,
+                             # partitioner=get_partition
+                             )
+
+    # kafka_python_producer_async(producer, topic, 10)
+    kafka_python_producer_sync(producer, topic, 10)

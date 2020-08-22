@@ -1,12 +1,10 @@
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, TopicPartition
 import json
 
 if __name__ == "__main__":
-    consumer = KafkaConsumer(
-        'myfirst_topic',
-        bootstrap_servers=['localhost:9092'],
-        auto_offset_reset='earliest',
-        group_id='console-consumer-94126'
-    )
+    server_list = ['localhost:9092']
+    consumer = KafkaConsumer(bootstrap_servers= server_list)
+    # consumer.subscribe(['myfirst_topic'])
+    consumer.assign([TopicPartition('myfirst_topic', 0), TopicPartition('myfirst_topic', 1)])
     for msg in consumer:
-        print(msg.value)
+        print(msg)
