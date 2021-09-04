@@ -1,6 +1,7 @@
-from kafka import KafkaProducer
-import json
+from kafka import KafkaProducer #проект клонирован из роепозитория в мой профиль github
+import json #необходим для преобразования данных в байты для передачи
 from data import get_registered_user
+
 
 
 def json_serializer(data):
